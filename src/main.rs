@@ -24,29 +24,22 @@ impl<'a> Iterator for Lexer<'a> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Token> {
-        if let Some(c) = self.data.next() {
-            match c {
-                '(' => Some(Token::LParen),
-                ')' => Some(Token::RParen),
-                '.' => Some(Token::Dot),
-                ' ' | '\t' | '\n' => self.next(),
-                x => {
-                    let mut atom = x.to_string();
-                    loop {
-                        if let Some(d) = self.data.peek() {
-                            match d {
-                                '(' | ')' | ' ' | '\t' | '\n' => return Some(Token::Atom(atom)),
-                                _ => atom.push(self.data.next().unwrap()), // == d
-                            }
-                        } else {
-                            return Some(Token::Atom(atom));
-                        }
+        self.data.next().and_then(|c| match c {
+            '(' => Some(Token::LParen),
+            ')' => Some(Token::RParen),
+            '.' => Some(Token::Dot),
+            ' ' | '\t' | '\n' => self.next(),
+            c => {
+                let mut atom = c.to_string();
+                loop {
+                    match self.data.peek() {
+                        Some(&d) if "() \t\n".contains(d) => return Some(Token::Atom(atom)),
+                        None => return Some(Token::Atom(atom)),
+                        Some(_) => atom.push(self.data.next().unwrap()), // == d
                     }
                 }
             }
-        } else {
-            None
-        }
+        })
     }
 }
 
