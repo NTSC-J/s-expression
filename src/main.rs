@@ -2,7 +2,7 @@ use std::env;
 use std::iter::Peekable;
 use std::str::Chars;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Token {
     LParen,
     RParen,
@@ -66,46 +66,35 @@ impl S {
     }
     fn get_list(lexer: &mut Peekable<Lexer>) -> S {
         let mut list = Vec::<S>::new();
-        if let Some(car) = lexer.peek() {
-            match car {
-                Token::RParen => {
-                    lexer.next(); // )
-                    return S::List(list); // nil
-                }
-                _ => {
-                    list.push(S::parse(lexer)); // car
-                    if let Some(n) = lexer.peek() {
-                        match n {
-                            Token::Dot => {
-                                lexer.next(); // .
-                                match S::parse(lexer) {
-                                    // cdr
-                                    S::List(x) => {
-                                        list.extend(x);
-                                    }
-                                    x => {
-                                        list.push(x);
-                                    }
-                                }
-                                match lexer.next() {
-                                    Some(Token::RParen) => {}
-                                    _ => list.push(S::Invalid("expected )".to_string())),
-                                }
-                            }
-                            _ => {
-                                match S::get_list(lexer) {
-                                    S::List(cdr) => list.extend(cdr),
-                                    x => list.push(x), // Invalid
-                                }
-                            }
+        match lexer.peek() {
+            Some(Token::RParen) => {
+                lexer.next(); // )
+                              // nil
+            }
+            Some(_) => {
+                list.push(S::parse(lexer)); // car
+                match lexer.peek() {
+                    Some(Token::Dot) => {
+                        lexer.next(); // .
+                        match S::parse(lexer) {
+                            // cdr
+                            S::List(x) => list.extend(x),
+                            x => list.push(x),
                         }
-                    } else {
-                        return S::Invalid("early EOF in list".to_string());
+                        if lexer.next() != Some(Token::RParen) {
+                            list.push(S::Invalid("expected )".to_string()))
+                        }
                     }
+                    Some(_) => {
+                        match S::get_list(lexer) {
+                            S::List(cdr) => list.extend(cdr),
+                            x => list.push(x), // Invalid
+                        }
+                    }
+                    None => return S::Invalid("early EOF in list".to_string()),
                 }
             }
-        } else {
-            return S::Invalid("early EOF in list".to_string());
+            None => return S::Invalid("early EOF in list".to_string()),
         }
         S::List(list)
     }
