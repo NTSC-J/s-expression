@@ -1,6 +1,6 @@
 use std::env;
-use std::str::Chars;
 use std::iter::Peekable;
+use std::str::Chars;
 
 #[derive(Debug)]
 enum Token {
@@ -11,11 +11,13 @@ enum Token {
 }
 #[derive(Debug)]
 struct Lexer<'a> {
-    data: Peekable<Chars<'a>>
+    data: Peekable<Chars<'a>>,
 }
 impl<'a> Lexer<'a> {
     pub fn new(s: &str) -> Lexer {
-        Lexer{data: s.chars().peekable().clone()}
+        Lexer {
+            data: s.chars().peekable().clone(),
+        }
     }
 }
 impl<'a> Iterator for Lexer<'a> {
@@ -34,10 +36,10 @@ impl<'a> Iterator for Lexer<'a> {
                         if let Some(d) = self.data.peek() {
                             match d {
                                 '(' | ')' | ' ' | '\t' | '\n' => return Some(Token::Atom(atom)),
-                                _ => atom.push(self.data.next().unwrap()) // == d
+                                _ => atom.push(self.data.next().unwrap()), // == d
                             }
                         } else {
-                            return Some(Token::Atom(atom))
+                            return Some(Token::Atom(atom));
                         }
                     }
                 }
@@ -52,7 +54,7 @@ impl<'a> Iterator for Lexer<'a> {
 enum S {
     Atom(String),
     List(Vec<S>), // nilは空のリストになる
-    Invalid(String)
+    Invalid(String),
 }
 impl S {
     pub fn parse_str(data: &str) -> S {
@@ -63,7 +65,7 @@ impl S {
             match l {
                 Token::LParen => S::get_list(lexer),
                 Token::Atom(x) => S::Atom(x),
-                _ => S::Invalid("unexpected token".to_string())
+                _ => S::Invalid("unexpected token".to_string()),
             }
         } else {
             S::Invalid("early EOF".to_string())
@@ -75,41 +77,42 @@ impl S {
             match car {
                 Token::RParen => {
                     lexer.next(); // )
-                    return S::List(list) // nil
-                },
+                    return S::List(list); // nil
+                }
                 _ => {
                     list.push(S::parse(lexer)); // car
                     if let Some(n) = lexer.peek() {
                         match n {
                             Token::Dot => {
                                 lexer.next(); // .
-                                match S::parse(lexer) { // cdr
+                                match S::parse(lexer) {
+                                    // cdr
                                     S::List(x) => {
                                         list.extend(x);
-                                    },
+                                    }
                                     x => {
                                         list.push(x);
                                     }
                                 }
                                 match lexer.next() {
-                                    Some(Token::RParen) => {},
-                                    _ => list.push(S::Invalid("expected )".to_string()))
+                                    Some(Token::RParen) => {}
+                                    _ => list.push(S::Invalid("expected )".to_string())),
                                 }
-                            },
+                            }
                             _ => {
                                 match S::get_list(lexer) {
                                     S::List(cdr) => list.extend(cdr),
-                                    x => list.push(x) // Invalid
+                                    x => list.push(x), // Invalid
                                 }
                             }
                         }
                     } else {
-                        return S::Invalid("early EOF in list".to_string())
+                        return S::Invalid("early EOF in list".to_string());
                     }
                 }
             }
         } else {
-            return S::Invalid("early EOF in list".to_string())
+            return S::Invalid("early EOF in list".to_string());
         }
         S::List(list)
     }
