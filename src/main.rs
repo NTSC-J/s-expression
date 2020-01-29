@@ -1,8 +1,8 @@
-use std::prelude::v1::*;
 use std::env;
+use std::io::{Error, ErrorKind, Result};
 use std::iter::Peekable;
+use std::prelude::v1::*;
 use std::str::Chars;
-use std::io::{Result, Error, ErrorKind};
 
 #[derive(Debug, PartialEq)]
 enum Token {
@@ -84,7 +84,7 @@ impl S {
                             e => return e,
                         }
                         if lexer.next() != Some(Token::RParen) {
-                            return S::data_error("expected )")
+                            return S::data_error("expected )");
                         }
                     }
                     Some(_) => {
